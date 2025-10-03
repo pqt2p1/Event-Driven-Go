@@ -60,4 +60,26 @@ func useMiddlewares(router *message.Router, watermillLogger watermill.LoggerAdap
 		Multiplier:      2.0,                    // nhân đôi sau mỗi lần retry
 		Logger:          watermillLogger,        // dùng slog mặc định
 	}.Middleware)
+
+	router.AddMiddleware(MalformedMessageMiddleware)
+}
+
+func MalformedMessageMiddleware(next message.HandlerFunc) message.HandlerFunc {
+	return func(msg *message.Message) ([]*message.Message, error) {
+		// Case 1: JSON hỏng với UUID cụ thể
+		if msg.UUID == "2beaf5bc-d5e4-4653-b075-2b36bbf28949" {
+			slog.Error("Invalid JSON payload, ignoring message", "uuid", msg.UUID)
+			return nil, nil
+		}
+
+		// Case 2: Metadata type sai
+		if msg.Metadata.Get("type") == "TicketBooking" {
+			slog.Error("Invalid message type",
+				"expected", "TicketBookingConfirmed",
+				"got", msg.Metadata.Get("type"))
+			return nil, nil
+		}
+
+		return next(msg)
+	}
 }
