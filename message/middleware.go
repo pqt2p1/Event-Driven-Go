@@ -41,7 +41,13 @@ func useMiddlewares(router *message.Router) {
 
 			logger.Info("Handling a message")
 
-			return next(msg)
+			msgs, err := next(msg)
+			if err != nil {
+				logger.With(
+					"error", err,
+				).Error("Error while handling a message")
+			}
+			return msgs, nil
 		}
 	})
 }
