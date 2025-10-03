@@ -1,7 +1,9 @@
 package message
 
 import (
+	"github.com/ThreeDotsLabs/watermill"
 	"log/slog"
+	"time"
 
 	"github.com/ThreeDotsLabs/go-event-driven/v2/common/log"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -9,7 +11,7 @@ import (
 	"github.com/lithammer/shortuuid/v3"
 )
 
-func useMiddlewares(router *message.Router) {
+func useMiddlewares(router *message.Router, watermillLogger watermill.LoggerAdapter) {
 	router.AddMiddleware(middleware.Recoverer)
 
 	router.AddMiddleware(func(h message.HandlerFunc) message.HandlerFunc {
@@ -50,4 +52,12 @@ func useMiddlewares(router *message.Router) {
 			return msgs, nil
 		}
 	})
+
+	router.AddMiddleware(middleware.Retry{
+		MaxRetries:      10,                     // số lần retry tối đa
+		InitialInterval: 100 * time.Millisecond, // bắt đầu với 100ms
+		MaxInterval:     time.Second,            // tối đa 1s
+		Multiplier:      2.0,                    // nhân đôi sau mỗi lần retry
+		Logger:          watermillLogger,        // dùng slog mặc định
+	}.Middleware)
 }
