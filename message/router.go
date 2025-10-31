@@ -49,6 +49,11 @@ func NewWatermillRouter(receiptsService event.ReceiptsService, spreadsheetsAPI e
 		func(msg *message.Message) error {
 			var event entities.TicketBookingConfirmed
 			err := json.Unmarshal(msg.Payload, &event)
+
+			// Temporary fix
+			if event.Price.Currency == "" {
+				event.Price.Currency = "USD"
+			}
 			if err != nil {
 				return err
 			}
@@ -64,6 +69,11 @@ func NewWatermillRouter(receiptsService event.ReceiptsService, spreadsheetsAPI e
 		func(msg *message.Message) error {
 			var event entities.TicketBookingConfirmed
 			err := json.Unmarshal(msg.Payload, &event)
+
+			// Temporary fix
+			if event.Price.Currency == "" {
+				event.Price.Currency = "USD"
+			}
 			if err != nil {
 				return err
 			}

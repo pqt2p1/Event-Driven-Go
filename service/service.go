@@ -10,9 +10,9 @@ import (
 	"golang.org/x/sync/errgroup"
 	"log/slog"
 	stdHTTP "net/http"
-	"tickets/adapters"
 	ticketsHttp "tickets/http"
 	"tickets/message"
+	"tickets/message/event"
 )
 
 type Service struct {
@@ -22,8 +22,8 @@ type Service struct {
 
 func New(
 	redisClient *redis.Client,
-	spreadsheetsAPI *adapters.SpreadsheetsAPIClient,
-	receiptsService *adapters.ReceiptsServiceClient,
+	spreadsheetsAPI event.SpreadsheetsAPI,
+	receiptsService event.ReceiptsService,
 ) Service {
 	watermillLogger := watermill.NewSlogLogger(slog.Default())
 	publisher, _ := message.NewPublisher(redisClient, watermillLogger)
