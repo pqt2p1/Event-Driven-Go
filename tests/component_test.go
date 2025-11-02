@@ -50,12 +50,23 @@ func TestComponent(t *testing.T) {
 		},
 	}
 
+	ticketCancel := ticketsHttp.TicketStatus{
+		TicketID:      "test-ticket",
+		Status:        "canceled",
+		CustomerEmail: "test@example.com",
+		Price: entities.Money{
+			Amount:   "100",
+			Currency: "USD",
+		},
+	}
+
 	request := ticketsHttp.TicketsStatusRequest{
-		Tickets: []ticketsHttp.TicketStatus{ticket},
+		Tickets: []ticketsHttp.TicketStatus{ticket, ticketCancel},
 	}
 	sendTicketsStatus(t, request)
 	assertReceiptForTicketIssued(t, receiptsService, ticket)
 	assertRowInTicketsToPrint(t, spreadsheetsAPI, ticket)
+	assertRowInticketsToRefund(t, spreadsheetsAPI, ticketCancel)
 }
 
 func sendTicketsStatus(t *testing.T, req ticketsHttp.TicketsStatusRequest) {
@@ -149,6 +160,43 @@ func assertRowInTicketsToPrint(t *testing.T, spreadsheetsAPI *adapters.Spreadshe
 
 	require.NotEqual(t, -1, rowIndex, "row for ticket %s not found in tickets-to-print", ticket.TicketID)
 	assert.Equal(t, "tickets-to-print", spreadsheetsAPI.SpreadsheetNames[rowIndex])
+}
+
+func assertRowInticketsToRefund(t *testing.T, spreadsheetsAPI *adapters.SpreadsheetsAPIStub, ticket ticketsHttp.TicketStatus) {
+	t.Helper()
+
+	parentT := t
+
+	assert.EventuallyWithT(
+		t,
+		func(t *assert.CollectT) {
+			rowsLen := len(spreadsheetsAPI.Rows)
+			parentT.Log("rows", rowsLen)
+			assert.Greater(t, rowsLen, 0, "no rows")
+		},
+		10*time.Second,
+		100*time.Millisecond,
+	)
+
+	var rowIndex = -1
+	for i, sheetName := range spreadsheetsAPI.SpreadsheetNames {
+		if sheetName == "tickets-to-refund" {
+			row := spreadsheetsAPI.Rows[i]
+			for _, cell := range row {
+				if cell == ticket.TicketID {
+					rowIndex = i
+					break
+				}
+			}
+		}
+		if rowIndex != -1 {
+			break
+		}
+	}
+
+	require.NotEqual(t, -1, rowIndex, "row for ticket %s not found in tickets-to-refund", ticket.TicketID)
+	assert.Equal(t, "tickets-to-refund", spreadsheetsAPI.SpreadsheetNames[rowIndex])
+
 }
 
 func waitForHttpServer(t *testing.T) {
