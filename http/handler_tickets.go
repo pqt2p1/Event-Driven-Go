@@ -24,6 +24,10 @@ type ticketsStatusRequest struct {
 	Tickets []TicketStatus `json:"tickets"`
 }
 
+type TicketsStatusRequest struct {
+	Tickets []TicketStatus `json:"tickets"`
+}
+
 func (h Handler) PostTicketsStatus(c echo.Context) error {
 	var request ticketsStatusRequest
 	err := c.Bind(&request)
