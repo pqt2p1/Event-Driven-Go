@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/ThreeDotsLabs/go-event-driven/v2/common/clients"
 	"github.com/ThreeDotsLabs/go-event-driven/v2/common/log"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"log/slog"
 	"net/http"
 	"os"
@@ -34,10 +36,17 @@ func main() {
 	redisClient := message.NewRedisClient("REDIS_ADDR")
 	defer redisClient.Close()
 
+	database, err := sqlx.Open("postgres", os.Getenv("POSTGRES_URL"))
+	if err != nil {
+		panic(err)
+	}
+	defer database.Close()
+
 	spreadsheetsAPI := adapters.NewSpreadsheetsAPIClient(apiClients)
 	receiptsService := adapters.NewReceiptsServiceClient(apiClients)
 
 	err = service.New(
+		database,
 		redisClient,
 		spreadsheetsAPI,
 		receiptsService,

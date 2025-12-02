@@ -3,24 +3,29 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ThreeDotsLabs/watermill"
 	watermillMessage "github.com/ThreeDotsLabs/watermill/message"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/errgroup"
 	"log/slog"
 	stdHTTP "net/http"
+	"tickets/db"
 	ticketsHttp "tickets/http"
 	"tickets/message"
 	"tickets/message/event"
 )
 
 type Service struct {
+	db              *sqlx.DB
 	echoRouter      *echo.Echo
 	watermillRouter *watermillMessage.Router
 }
 
 func New(
+	db *sqlx.DB,
 	redisClient *redis.Client,
 	spreadsheetsAPI event.SpreadsheetsAPI,
 	receiptsService event.ReceiptsService,
@@ -40,12 +45,17 @@ func New(
 	)
 
 	return Service{
+		db:              db,
 		echoRouter:      echoRouter,
 		watermillRouter: watermillRouter,
 	}
 }
 
 func (s Service) Run(ctx context.Context) error {
+	if err := db.InitializeSchema(s.db); err != nil {
+		return fmt.Errorf("failed to initialize database schema: %w", err)
+	}
+	
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Goroutine 1: watermill router

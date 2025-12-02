@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/jmoiron/sqlx"
 	"github.com/lithammer/shortuuid/v3"
 	"net/http"
+	"os"
 	"testing"
 	"tickets/adapters"
 	"tickets/entities"
@@ -23,6 +25,12 @@ func TestComponent(t *testing.T) {
 
 	defer redisClient.Close()
 
+	db, err := sqlx.Open("postgres", os.Getenv("POSTGRES_URL"))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -31,6 +39,7 @@ func TestComponent(t *testing.T) {
 
 	go func() {
 		svc := service.New(
+			db,
 			redisClient,
 			spreadsheetsAPI,
 			receiptsService,
