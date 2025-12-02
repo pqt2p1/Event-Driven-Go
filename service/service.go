@@ -26,10 +26,11 @@ func New(
 	receiptsService event.ReceiptsService,
 ) Service {
 	watermillLogger := watermill.NewSlogLogger(slog.Default())
-	eventBus, err := message.NewEventBus(redisClient, watermillLogger)
+	publisher, err := message.NewPublisher(redisClient, watermillLogger)
 	if err != nil {
 		panic(err)
 	}
+	eventBus := event.NewBus(publisher)
 	echoRouter := ticketsHttp.NewHttpRouter(eventBus, spreadsheetsAPI)
 	watermillRouter := message.NewWatermillRouter(
 		receiptsService,

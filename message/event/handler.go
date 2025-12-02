@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 
 	"tickets/entities"
 )
@@ -34,4 +35,12 @@ type SpreadsheetsAPI interface {
 
 type ReceiptsService interface {
 	IssueReceipt(ctx context.Context, request entities.IssueReceiptRequest) error
+}
+
+func (h Handler) EventHandlers() []cqrs.EventHandler {
+	return []cqrs.EventHandler{
+		cqrs.NewEventHandler("issue_receipt", h.IssueReceipt),
+		cqrs.NewEventHandler("append_to_tracker", h.AppendToTracker),
+		cqrs.NewEventHandler("cancel_ticket", h.CancelTicket),
+	}
 }

@@ -7,7 +7,7 @@ import (
 	"tickets/entities"
 )
 
-func (h Handler) CancelTicket(ctx context.Context, event entities.TicketBookingCanceled) error {
+func (h Handler) CancelTicket(ctx context.Context, event *entities.TicketBookingCanceled) error {
 	slog.Info("Adding ticket refund to sheet")
 
 	return h.spreadsheetsAPI.AppendRow(
