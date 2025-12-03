@@ -25,27 +25,33 @@ type Service struct {
 }
 
 func New(
-	db *sqlx.DB,
+	dbConn *sqlx.DB,
 	redisClient *redis.Client,
 	spreadsheetsAPI event.SpreadsheetsAPI,
 	receiptsService event.ReceiptsService,
 ) Service {
+	ticketsRepo := db.NewTicketsRepository(dbConn)
 	watermillLogger := watermill.NewSlogLogger(slog.Default())
 	publisher, err := message.NewPublisher(redisClient, watermillLogger)
 	if err != nil {
 		panic(err)
 	}
 	eventBus := event.NewBus(publisher)
-	echoRouter := ticketsHttp.NewHttpRouter(eventBus, spreadsheetsAPI)
-	watermillRouter := message.NewWatermillRouter(
-		receiptsService,
+	eventsHandler := event.NewHandler(
 		spreadsheetsAPI,
-		redisClient,
+		receiptsService,
+		ticketsRepo,
+	)
+	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
+	echoRouter := ticketsHttp.NewHttpRouter(eventBus)
+	watermillRouter := message.NewWatermillRouter(
+		eventProcessorConfig,
+		eventsHandler,
 		watermillLogger,
 	)
 
 	return Service{
-		db:              db,
+		db:              dbConn,
 		echoRouter:      echoRouter,
 		watermillRouter: watermillRouter,
 	}
@@ -55,7 +61,7 @@ func (s Service) Run(ctx context.Context) error {
 	if err := db.InitializeSchema(s.db); err != nil {
 		return fmt.Errorf("failed to initialize database schema: %w", err)
 	}
-	
+
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Goroutine 1: watermill router
@@ -85,5 +91,5 @@ func (s Service) Run(ctx context.Context) error {
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	return nil
+	return g.Wait()
 }

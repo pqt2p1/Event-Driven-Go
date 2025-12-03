@@ -7,12 +7,11 @@ import (
 	"net/http"
 )
 
-func NewHttpRouter(eventBus *cqrs.EventBus, spreadsheetsAPIClient SpreadsheetsAPI) *echo.Echo {
+func NewHttpRouter(eventBus *cqrs.EventBus) *echo.Echo {
 	e := libHttp.NewEcho()
 
 	handler := Handler{
-		eventBus:              eventBus,
-		spreadsheetsAPIClient: spreadsheetsAPIClient,
+		eventBus: eventBus,
 	}
 
 	e.POST("/tickets-status", handler.PostTicketsStatus)

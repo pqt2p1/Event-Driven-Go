@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
+	"tickets/db"
 
 	"tickets/entities"
 )
@@ -10,11 +11,13 @@ import (
 type Handler struct {
 	spreadsheetsAPI SpreadsheetsAPI
 	receiptsService ReceiptsService
+	ticketsRepo     *db.TicketsRepository
 }
 
 func NewHandler(
 	spreadsheetsAPI SpreadsheetsAPI,
 	receiptsService ReceiptsService,
+	ticketsRepo *db.TicketsRepository,
 ) Handler {
 	if spreadsheetsAPI == nil {
 		panic("missing spreadsheetsAPI")
@@ -26,6 +29,7 @@ func NewHandler(
 	return Handler{
 		spreadsheetsAPI: spreadsheetsAPI,
 		receiptsService: receiptsService,
+		ticketsRepo:     ticketsRepo,
 	}
 }
 
@@ -42,5 +46,6 @@ func (h Handler) EventHandlers() []cqrs.EventHandler {
 		cqrs.NewEventHandler("issue_receipt", h.IssueReceipt),
 		cqrs.NewEventHandler("append_to_tracker", h.AppendToTracker),
 		cqrs.NewEventHandler("cancel_ticket", h.CancelTicket),
+		cqrs.NewEventHandler("store_tickets", h.StoreTickets),
 	}
 }
