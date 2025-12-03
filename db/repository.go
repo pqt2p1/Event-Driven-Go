@@ -26,3 +26,11 @@ func (r *TicketsRepository) Add(ctx context.Context, ticket entities.Ticket) err
 	)
 	return err
 }
+
+func (r *TicketsRepository) Remove(ctx context.Context, ticketID string) error {
+	_, err := r.db.ExecContext(
+		ctx, `DELETE FROM tickets WHERE ticket_id = $1`,
+		ticketID,
+	)
+	return err
+}
