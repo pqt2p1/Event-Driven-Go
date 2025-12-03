@@ -5,16 +5,19 @@ import (
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"tickets/db"
 )
 
-func NewHttpRouter(eventBus *cqrs.EventBus) *echo.Echo {
+func NewHttpRouter(eventBus *cqrs.EventBus, ticketsRepo *db.TicketsRepository) *echo.Echo {
 	e := libHttp.NewEcho()
 
 	handler := Handler{
-		eventBus: eventBus,
+		eventBus:    eventBus,
+		ticketsRepo: ticketsRepo,
 	}
 
 	e.POST("/tickets-status", handler.PostTicketsStatus)
+	e.GET("/tickets", handler.GetTickets)
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "ok")
 	})

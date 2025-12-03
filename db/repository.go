@@ -34,3 +34,20 @@ func (r *TicketsRepository) Remove(ctx context.Context, ticketID string) error {
 	)
 	return err
 }
+
+func (r *TicketsRepository) FindAll(ctx context.Context) ([]entities.Ticket, error) {
+	var tickets []entities.Ticket
+
+	err := r.db.SelectContext(
+		ctx, &tickets,
+		`SELECT ticket_id, 
+       price_amount as "price.amount",
+       price_currency as "price.currency",
+       customer_email
+       FROM tickets`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return tickets, nil
+}

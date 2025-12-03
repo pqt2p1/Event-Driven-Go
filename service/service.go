@@ -43,7 +43,7 @@ func New(
 		ticketsRepo,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
-	echoRouter := ticketsHttp.NewHttpRouter(eventBus)
+	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo)
 	watermillRouter := message.NewWatermillRouter(
 		eventProcessorConfig,
 		eventsHandler,
