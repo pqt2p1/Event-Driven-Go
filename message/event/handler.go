@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"github.com/ThreeDotsLabs/go-event-driven/v2/common/clients/files"
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"tickets/db"
 
@@ -12,12 +13,14 @@ type Handler struct {
 	spreadsheetsAPI SpreadsheetsAPI
 	receiptsService ReceiptsService
 	ticketsRepo     *db.TicketsRepository
+	filesApi        FilesAPI
 }
 
 func NewHandler(
 	spreadsheetsAPI SpreadsheetsAPI,
 	receiptsService ReceiptsService,
 	ticketsRepo *db.TicketsRepository,
+	filesApi FilesAPI,
 ) Handler {
 	if spreadsheetsAPI == nil {
 		panic("missing spreadsheetsAPI")
@@ -30,6 +33,7 @@ func NewHandler(
 		spreadsheetsAPI: spreadsheetsAPI,
 		receiptsService: receiptsService,
 		ticketsRepo:     ticketsRepo,
+		filesApi:        filesApi,
 	}
 }
 
@@ -39,6 +43,14 @@ type SpreadsheetsAPI interface {
 
 type ReceiptsService interface {
 	IssueReceipt(ctx context.Context, request entities.IssueReceiptRequest) error
+}
+
+type FilesAPI interface {
+	PutFilesFileIdContentWithTextBodyWithResponse(
+		ctx context.Context,
+		fileID string,
+		body string,
+	) (*files.PutFilesFileIdContentResponse, error)
 }
 
 func (h Handler) EventHandlers() []cqrs.EventHandler {
