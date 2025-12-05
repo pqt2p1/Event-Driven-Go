@@ -43,6 +43,7 @@ func New(
 		receiptsService,
 		ticketsRepo,
 		filesAPI,
+		eventBus,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
 	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo)

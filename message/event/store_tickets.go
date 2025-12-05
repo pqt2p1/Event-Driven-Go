@@ -14,5 +14,6 @@ func (h Handler) StoreTickets(ctx context.Context, event *entities.TicketBooking
 		Price:         event.Price,
 		CustomerEmail: event.CustomerEmail,
 	}
+
 	return h.ticketsRepo.Add(ctx, ticket)
 }

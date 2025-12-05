@@ -14,6 +14,7 @@ type Handler struct {
 	receiptsService ReceiptsService
 	ticketsRepo     *db.TicketsRepository
 	filesApi        FilesAPI
+	eventBus        *cqrs.EventBus
 }
 
 func NewHandler(
@@ -21,6 +22,7 @@ func NewHandler(
 	receiptsService ReceiptsService,
 	ticketsRepo *db.TicketsRepository,
 	filesApi FilesAPI,
+	eventBus *cqrs.EventBus,
 ) Handler {
 	if spreadsheetsAPI == nil {
 		panic("missing spreadsheetsAPI")
@@ -34,6 +36,7 @@ func NewHandler(
 		receiptsService: receiptsService,
 		ticketsRepo:     ticketsRepo,
 		filesApi:        filesApi,
+		eventBus:        eventBus,
 	}
 }
 

@@ -39,5 +39,15 @@ func (h Handler) PrintTicket(ctx context.Context, event *entities.TicketBookingC
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode())
 	}
 
+	err = h.eventBus.Publish(ctx, &entities.TicketPrinted{
+		Header:   entities.NewMessageHeader(),
+		TicketID: event.TicketID,
+		FileName: fileID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to publish ticket printed: %w", err)
+	}
+
 	return nil
 }
