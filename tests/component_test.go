@@ -36,6 +36,7 @@ func TestComponent(t *testing.T) {
 
 	spreadsheetsAPI := &adapters.SpreadsheetsAPIStub{}
 	receiptsService := &adapters.ReceiptsServiceStub{}
+	filesAPI := &adapters.FilesAPIStub{}
 
 	go func() {
 		svc := service.New(
@@ -43,6 +44,7 @@ func TestComponent(t *testing.T) {
 			redisClient,
 			spreadsheetsAPI,
 			receiptsService,
+			filesAPI,
 		)
 		err := svc.Run(ctx)
 		assert.NoError(t, err)
@@ -76,6 +78,7 @@ func TestComponent(t *testing.T) {
 	assertReceiptForTicketIssued(t, receiptsService, ticket)
 	assertRowInTicketsToPrint(t, spreadsheetsAPI, ticket)
 	assertRowInticketsToRefund(t, spreadsheetsAPI, ticketCancel)
+	assertTicketPrinted(t, filesAPI, ticket)
 }
 
 func sendTicketsStatus(t *testing.T, req ticketsHttp.TicketsStatusRequest) {
@@ -206,6 +209,32 @@ func assertRowInticketsToRefund(t *testing.T, spreadsheetsAPI *adapters.Spreadsh
 	require.NotEqual(t, -1, rowIndex, "row for ticket %s not found in tickets-to-refund", ticket.TicketID)
 	assert.Equal(t, "tickets-to-refund", spreadsheetsAPI.SpreadsheetNames[rowIndex])
 
+}
+
+func assertTicketPrinted(t *testing.T, filesAPI *adapters.FilesAPIStub, ticket ticketsHttp.TicketStatus) {
+	t.Helper()
+
+	assert.EventuallyWithT(
+		t,
+		func(t *assert.CollectT) {
+			assert.True(t, filesAPI.WasCalled(), "Files API should be called")
+		},
+		10*time.Second,
+		100*time.Millisecond,
+	)
+
+	calls := filesAPI.GetCalls()
+	require.Greater(t, len(calls), 0, "No files created")
+
+	expectedFileID := ticket.TicketID + "-ticket.html"
+	found := false
+	for _, call := range calls {
+		if call.FileID == expectedFileID {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "File %s not created", expectedFileID)
 }
 
 func waitForHttpServer(t *testing.T) {
