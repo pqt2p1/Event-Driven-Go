@@ -32,6 +32,7 @@ func New(
 	filesAPI event.FilesAPI,
 ) Service {
 	ticketsRepo := db.NewTicketsRepository(dbConn)
+	showsRepo := db.NewShowsRepository(dbConn)
 	watermillLogger := watermill.NewSlogLogger(slog.Default())
 	publisher, err := message.NewPublisher(redisClient, watermillLogger)
 	if err != nil {
@@ -46,7 +47,7 @@ func New(
 		eventBus,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
-	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo)
+	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo, showsRepo)
 	watermillRouter := message.NewWatermillRouter(
 		eventProcessorConfig,
 		eventsHandler,
