@@ -33,6 +33,7 @@ func New(
 ) Service {
 	ticketsRepo := db.NewTicketsRepository(dbConn)
 	showsRepo := db.NewShowsRepository(dbConn)
+	bookingRepo := db.NewBookingRepository(dbConn)
 	watermillLogger := watermill.NewSlogLogger(slog.Default())
 	publisher, err := message.NewPublisher(redisClient, watermillLogger)
 	if err != nil {
@@ -47,7 +48,7 @@ func New(
 		eventBus,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
-	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo, showsRepo)
+	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo, showsRepo, bookingRepo)
 	watermillRouter := message.NewWatermillRouter(
 		eventProcessorConfig,
 		eventsHandler,

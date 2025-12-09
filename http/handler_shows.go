@@ -16,7 +16,7 @@ type showRequest struct {
 	Venue          string    `json:"venue"`
 }
 
-func (h Handler) Shows(c echo.Context) error {
+func (h Handler) PostShows(c echo.Context) error {
 	var request showRequest
 	err := c.Bind(&request)
 	if err != nil {
@@ -26,12 +26,12 @@ func (h Handler) Shows(c echo.Context) error {
 	showID := uuid.New().String()
 
 	show := entities.Show{
-		ShowID:         showID,
-		DeadNationID:   request.DeadNationID,
-		NumberOfTicket: request.NumberOfTicket,
-		StartTime:      request.StartTime,
-		Title:          request.Title,
-		Venue:          request.Venue,
+		ShowID:          showID,
+		DeadNationID:    request.DeadNationID,
+		NumberOfTickets: request.NumberOfTicket,
+		StartTime:       request.StartTime,
+		Title:           request.Title,
+		Venue:           request.Venue,
 	}
 
 	err = h.showsRepo.Add(c.Request().Context(), show)

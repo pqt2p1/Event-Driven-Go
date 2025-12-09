@@ -7,18 +7,21 @@ import (
 	"net/http"
 )
 
-func NewHttpRouter(eventBus *cqrs.EventBus, ticketsRepo TicketsRepository, showsRepo ShowsRepository) *echo.Echo {
+func NewHttpRouter(eventBus *cqrs.EventBus, ticketsRepo TicketsRepository, showsRepo ShowsRepository, bookingRepo BookingRepository) *echo.Echo {
 	e := libHttp.NewEcho()
 
 	handler := Handler{
 		eventBus:    eventBus,
 		ticketsRepo: ticketsRepo,
 		showsRepo:   showsRepo,
+		bookingRepo: bookingRepo,
 	}
 
 	e.POST("/tickets-status", handler.PostTicketsStatus)
 	e.GET("/tickets", handler.GetTickets)
-	e.POST("/shows", handler.Shows)
+	e.POST("/shows", handler.PostShows)
+	e.POST("/book-tickets", handler.PostBookTickets)
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "ok")
 	})
