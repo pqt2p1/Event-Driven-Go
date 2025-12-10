@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lithammer/shortuuid/v3"
 	"net/http"
@@ -79,6 +80,11 @@ func TestComponent(t *testing.T) {
 	assertRowInTicketsToPrint(t, spreadsheetsAPI, ticket)
 	assertRowInticketsToRefund(t, spreadsheetsAPI, ticketCancel)
 	assertTicketPrinted(t, filesAPI, ticket)
+
+	showID := createShow(t, db)
+	bookingID := sendBookTicketsRequest(t, showID, "customer@example.com", 3)
+	assertBookingCreated(t, db, bookingID, showID, "customer@example.com", 3)
+
 }
 
 func sendTicketsStatus(t *testing.T, req ticketsHttp.TicketsStatusRequest) {
@@ -235,6 +241,85 @@ func assertTicketPrinted(t *testing.T, filesAPI *adapters.FilesAPIStub, ticket t
 		}
 	}
 	assert.True(t, found, "File %s not created", expectedFileID)
+}
+
+func sendBookTicketsRequest(t *testing.T, showID, customerEmail string, numberOfTickets int) string {
+	t.Helper()
+
+	request := map[string]interface{}{
+		"show_id":           showID,
+		"number_of_tickets": numberOfTickets,
+		"customer_email":    customerEmail,
+	}
+
+	payload, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	httpReq, err := http.NewRequest(
+		http.MethodPost,
+		"http://localhost:8080/book-tickets",
+		bytes.NewBuffer(payload),
+	)
+	require.NoError(t, err)
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	var response map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	require.NoError(t, err)
+
+	bookingID, ok := response["booking_id"]
+	require.True(t, ok, "booking_id not found in response")
+	require.NotEmpty(t, bookingID, "booking_id is empty")
+
+	return bookingID
+}
+
+func assertBookingCreated(t *testing.T, db *sqlx.DB, bookingID, showID, customerEmail string, numberOfTickets int) {
+	t.Helper()
+
+	assert.EventuallyWithT(
+		t,
+		func(t *assert.CollectT) {
+			// Query booking từ DB
+			var booking entities.Booking
+			err := db.Get(&booking, "SELECT * FROM bookings WHERE booking_id = $1", bookingID)
+
+			// Assert booking tồn tại
+			if !assert.NoError(t, err, "booking not found in database") {
+				return
+			}
+
+			// Assert các fields
+			assert.Equal(t, bookingID, booking.BookingID)
+			assert.Equal(t, showID, booking.ShowID)
+			assert.Equal(t, customerEmail, booking.CustomerEmail)
+			assert.Equal(t, numberOfTickets, booking.NumberOfTickets)
+		},
+		10*time.Second,
+		100*time.Millisecond,
+	)
+}
+
+func createShow(t *testing.T, db *sqlx.DB) string {
+	t.Helper()
+
+	showID := uuid.New().String()
+
+	_, err := db.Exec(`
+          INSERT INTO shows (show_id, dead_nation_id, number_of_tickets, start_time, title, venue)
+          VALUES ($1, $2, $3, $4, $5, $6)
+      `, showID, uuid.New().String(), 100, time.Now(), "Test Concert", "Test Venue")
+
+	require.NoError(t, err)
+
+	return showID
 }
 
 func waitForHttpServer(t *testing.T) {
