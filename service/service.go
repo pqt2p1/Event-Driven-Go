@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill"
+	watermillSQL "github.com/ThreeDotsLabs/watermill-sql/v3/pkg/sql"
+	"github.com/ThreeDotsLabs/watermill/components/forwarder"
 	watermillMessage "github.com/ThreeDotsLabs/watermill/message"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -22,6 +24,7 @@ type Service struct {
 	db              *sqlx.DB
 	echoRouter      *echo.Echo
 	watermillRouter *watermillMessage.Router
+	forwarder       *forwarder.Forwarder
 }
 
 func New(
@@ -55,10 +58,37 @@ func New(
 		watermillLogger,
 	)
 
+	sqlSubscriber, err := watermillSQL.NewSubscriber(
+		dbConn,
+		watermillSQL.SubscriberConfig{
+			SchemaAdapter:    watermillSQL.DefaultPostgreSQLSchema{},
+			OffsetsAdapter:   watermillSQL.DefaultPostgreSQLOffsetsAdapter{},
+			InitializeSchema: true,
+		},
+		watermillLogger,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	fwd, err := forwarder.NewForwarder(
+		sqlSubscriber,
+		publisher,
+		watermillLogger,
+		forwarder.Config{
+			ForwarderTopic: "events_to_forward",
+			Router:         watermillRouter,
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return Service{
 		db:              dbConn,
 		echoRouter:      echoRouter,
 		watermillRouter: watermillRouter,
+		forwarder:       fwd,
 	}
 }
 
