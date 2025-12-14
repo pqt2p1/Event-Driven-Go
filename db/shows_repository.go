@@ -28,3 +28,13 @@ func (s *ShowsRepository) Add(ctx context.Context, show entities.Show) error {
 	)
 	return err
 }
+
+func (s *ShowsRepository) ShowByID(ctx context.Context, showID string) (entities.Show, error) {
+	var show entities.Show
+	err := s.db.GetContext(ctx, &show, `SELECT * FROM shows WHERE show_id = $1`, showID)
+	if err != nil {
+		return entities.Show{}, err
+	}
+
+	return show, nil
+}

@@ -10,11 +10,13 @@ import (
 )
 
 type Handler struct {
-	spreadsheetsAPI SpreadsheetsAPI
-	receiptsService ReceiptsService
-	ticketsRepo     *db.TicketsRepository
-	filesApi        FilesAPI
-	eventBus        *cqrs.EventBus
+	spreadsheetsAPI  SpreadsheetsAPI
+	receiptsService  ReceiptsService
+	ticketsRepo      *db.TicketsRepository
+	filesApi         FilesAPI
+	eventBus         *cqrs.EventBus
+	showsRepo        *db.ShowsRepository
+	deadNationClient DeadNationClient
 }
 
 func NewHandler(
@@ -23,6 +25,8 @@ func NewHandler(
 	ticketsRepo *db.TicketsRepository,
 	filesApi FilesAPI,
 	eventBus *cqrs.EventBus,
+	showsRepo *db.ShowsRepository,
+	deadNationClient DeadNationClient,
 ) Handler {
 	if spreadsheetsAPI == nil {
 		panic("missing spreadsheetsAPI")
@@ -32,11 +36,13 @@ func NewHandler(
 	}
 
 	return Handler{
-		spreadsheetsAPI: spreadsheetsAPI,
-		receiptsService: receiptsService,
-		ticketsRepo:     ticketsRepo,
-		filesApi:        filesApi,
-		eventBus:        eventBus,
+		spreadsheetsAPI:  spreadsheetsAPI,
+		receiptsService:  receiptsService,
+		ticketsRepo:      ticketsRepo,
+		filesApi:         filesApi,
+		eventBus:         eventBus,
+		showsRepo:        showsRepo,
+		deadNationClient: deadNationClient,
 	}
 }
 
@@ -54,6 +60,16 @@ type FilesAPI interface {
 		fileID string,
 		body string,
 	) (*files.PutFilesFileIdContentResponse, error)
+}
+
+type DeadNationClient interface {
+	PostTicketBooking(
+		ctx context.Context,
+		bookingID string,
+		eventID string,
+		numberOfTickets int,
+		customerEmail string,
+	) error
 }
 
 func (h Handler) EventHandlers() []cqrs.EventHandler {

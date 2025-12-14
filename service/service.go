@@ -33,6 +33,7 @@ func New(
 	spreadsheetsAPI event.SpreadsheetsAPI,
 	receiptsService event.ReceiptsService,
 	filesAPI event.FilesAPI,
+	deadNationClient event.DeadNationClient,
 ) Service {
 	ticketsRepo := db.NewTicketsRepository(dbConn)
 	showsRepo := db.NewShowsRepository(dbConn)
@@ -49,6 +50,8 @@ func New(
 		ticketsRepo,
 		filesAPI,
 		eventBus,
+		showsRepo,
+		deadNationClient,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
 	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo, showsRepo, bookingRepo)

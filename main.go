@@ -45,6 +45,7 @@ func main() {
 	spreadsheetsAPI := adapters.NewSpreadsheetsAPIClient(apiClients)
 	receiptsService := adapters.NewReceiptsServiceClient(apiClients)
 	filesAPI := adapters.NewFilesAPIClient(apiClients)
+	deadNationClient := adapters.NewDeadNationClient(apiClients)
 
 	err = service.New(
 		database,
@@ -52,6 +53,7 @@ func main() {
 		spreadsheetsAPI,
 		receiptsService,
 		filesAPI,
+		deadNationClient,
 	).Run(ctx)
 	if err != nil {
 		panic(err)

@@ -42,6 +42,10 @@ func NewWatermillRouter(eventProcessorConfig cqrs.EventProcessorConfig, eventHan
 			"PrintTicket",
 			eventHandler.PrintTicket,
 		),
+		cqrs.NewEventHandler(
+			"BookingMade",
+			eventHandler.BookingMade,
+		),
 	)
 
 	return router
