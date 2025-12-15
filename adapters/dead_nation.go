@@ -3,9 +3,12 @@ package adapters
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/ThreeDotsLabs/go-event-driven/v2/common/clients"
 	"github.com/ThreeDotsLabs/go-event-driven/v2/common/clients/dead_nation"
-	"github.com/google/uuid"
+
+	"tickets/entities"
 )
 
 type DeadNationClient struct {
@@ -13,42 +16,29 @@ type DeadNationClient struct {
 }
 
 func NewDeadNationClient(clients *clients.Clients) *DeadNationClient {
+	if clients == nil {
+		panic("NewDeadNationClient: clients is nil")
+	}
+
 	return &DeadNationClient{clients: clients}
 }
 
-func (c *DeadNationClient) PostTicketBooking(
-	ctx context.Context,
-	bookingID string,
-	eventID string,
-	numberOfTickets int,
-	customerEmail string,
-) error {
-	// Parse UUIDs
-	bookingUUID, err := uuid.Parse(bookingID)
-	if err != nil {
-		return fmt.Errorf("invalid booking ID: %w", err)
-	}
-
-	eventUUID, err := uuid.Parse(eventID)
-	if err != nil {
-		return fmt.Errorf("invalid event ID: %w", err)
-	}
-
+func (c DeadNationClient) BookInDeadNation(ctx context.Context, request entities.DeadNationBooking) error {
 	resp, err := c.clients.DeadNation.PostTicketBookingWithResponse(
 		ctx,
 		dead_nation.PostTicketBookingRequest{
-			BookingId:       bookingUUID,
-			EventId:         eventUUID,
-			NumberOfTickets: numberOfTickets,
-			CustomerAddress: customerEmail,
+			CustomerAddress: request.CustomerEmail,
+			EventId:         request.DeadNationEventID,
+			NumberOfTickets: request.NumberOfTickets,
+			BookingId:       request.BookingID,
 		},
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to book place in Dead Nation: %w", err)
 	}
 
-	if resp.StatusCode() != 200 {
-		return fmt.Errorf("Dead Nation API returned %d", resp.StatusCode())
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected status code from dead nation: %d", resp.StatusCode())
 	}
 
 	return nil

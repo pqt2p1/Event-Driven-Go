@@ -63,13 +63,7 @@ type FilesAPI interface {
 }
 
 type DeadNationClient interface {
-	PostTicketBooking(
-		ctx context.Context,
-		bookingID string,
-		eventID string,
-		numberOfTickets int,
-		customerEmail string,
-	) error
+	BookInDeadNation(ctx context.Context, request entities.DeadNationBooking) error
 }
 
 func (h Handler) EventHandlers() []cqrs.EventHandler {
