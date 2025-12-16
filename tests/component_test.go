@@ -38,6 +38,7 @@ func TestComponent(t *testing.T) {
 	spreadsheetsAPI := &adapters.SpreadsheetsAPIStub{}
 	receiptsService := &adapters.ReceiptsServiceStub{}
 	filesAPI := &adapters.FilesAPIStub{}
+	deadNationClient := &adapters.DeadNationStub{}
 
 	go func() {
 		svc := service.New(
@@ -46,6 +47,7 @@ func TestComponent(t *testing.T) {
 			spreadsheetsAPI,
 			receiptsService,
 			filesAPI,
+			deadNationClient,
 		)
 		err := svc.Run(ctx)
 		assert.NoError(t, err)
@@ -84,6 +86,7 @@ func TestComponent(t *testing.T) {
 	showID := createShow(t, db)
 	bookingID := sendBookTicketsRequest(t, showID, "customer@example.com", 3)
 	assertBookingCreated(t, db, bookingID, showID, "customer@example.com", 3)
+	assertBookingInDeadNation(t, deadNationClient, bookingID, "customer@example.com", 3)
 
 }
 
@@ -320,6 +323,36 @@ func createShow(t *testing.T, db *sqlx.DB) string {
 	require.NoError(t, err)
 
 	return showID
+}
+
+func assertBookingInDeadNation(t *testing.T, deadNationClient *adapters.DeadNationStub, bookingID, customerEmail string, numberOfTickets int) {
+	t.Helper()
+
+	assert.EventuallyWithT(
+		t,
+		func(t *assert.CollectT) {
+			bookingsLen := len(deadNationClient.DeadNationBookings)
+			if !assert.Greater(t, bookingsLen, 0, "no bookings sent to Dead Nation") {
+				return
+			}
+
+			// Find booking by ID
+			var found bool
+			for _, booking := range deadNationClient.DeadNationBookings {
+				if booking.BookingID.String() == bookingID {
+					found = true
+					assert.Equal(t, customerEmail, booking.CustomerEmail)
+					assert.Equal(t, numberOfTickets, booking.NumberOfTickets)
+					assert.NotEqual(t, uuid.Nil, booking.DeadNationEventID, "DeadNationEventID should not be nil")
+					break
+				}
+			}
+
+			assert.True(t, found, "booking %s not found in Dead Nation bookings", bookingID)
+		},
+		10*time.Second,
+		100*time.Millisecond,
+	)
 }
 
 func waitForHttpServer(t *testing.T) {
