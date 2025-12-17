@@ -88,6 +88,29 @@ func TestComponent(t *testing.T) {
 	assertBookingCreated(t, db, bookingID, showID, "customer@example.com", 3)
 	assertBookingInDeadNation(t, deadNationClient, bookingID, "customer@example.com", 3)
 
+	testTicketLimits(t, db)
+}
+
+func testTicketLimits(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Create show with 10 tickets
+	showID := createShowWithTickets(t, db, 10)
+
+	// Book 6 tickets - should succeed
+	bookingID1 := sendBookTicketsRequest(t, showID, "customer1@example.com", 6)
+	assertBookingCreated(t, db, bookingID1, showID, "customer1@example.com", 6)
+
+	// Try to book 5 more tickets - should fail (only 4 left)
+	sendBookTicketsRequestExpectingError(t, showID, "customer2@example.com", 5, http.StatusBadRequest)
+
+	// Book 4 tickets - should succeed
+	bookingID2 := sendBookTicketsRequest(t, showID, "customer3@example.com", 4)
+	assertBookingCreated(t, db, bookingID2, showID, "customer3@example.com", 4)
+
+	// Try to book 1 more ticket - should fail (no tickets left)
+	sendBookTicketsRequestExpectingError(t, showID, "customer4@example.com", 1, http.StatusBadRequest)
+
 }
 
 func sendTicketsStatus(t *testing.T, req ticketsHttp.TicketsStatusRequest) {
@@ -323,6 +346,49 @@ func createShow(t *testing.T, db *sqlx.DB) string {
 	require.NoError(t, err)
 
 	return showID
+}
+
+func createShowWithTickets(t *testing.T, db *sqlx.DB, numberOfTickets int) string {
+	t.Helper()
+
+	showID := uuid.New().String()
+
+	_, err := db.Exec(`
+		INSERT INTO shows (show_id, dead_nation_id, number_of_tickets, start_time, title, venue)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, showID, uuid.New().String(), numberOfTickets, time.Now(), "Test Concert", "Test Venue")
+
+	require.NoError(t, err)
+
+	return showID
+}
+
+func sendBookTicketsRequestExpectingError(t *testing.T, showID, customerEmail string, numberOfTickets int, expectedStatus int) {
+	t.Helper()
+
+	request := map[string]interface{}{
+		"show_id":           showID,
+		"number_of_tickets": numberOfTickets,
+		"customer_email":    customerEmail,
+	}
+
+	payload, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	httpReq, err := http.NewRequest(
+		http.MethodPost,
+		"http://localhost:8080/book-tickets",
+		bytes.NewBuffer(payload),
+	)
+	require.NoError(t, err)
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, expectedStatus, resp.StatusCode, "Expected HTTP %d but got %d", expectedStatus, resp.StatusCode)
 }
 
 func assertBookingInDeadNation(t *testing.T, deadNationClient *adapters.DeadNationStub, bookingID, customerEmail string, numberOfTickets int) {

@@ -9,11 +9,11 @@ import (
 )
 
 type showRequest struct {
-	DeadNationID   string    `json:"dead_nation_id"`
-	NumberOfTicket int       `json:"number_of_ticket"`
-	StartTime      time.Time `json:"start_time"`
-	Title          string    `json:"title"`
-	Venue          string    `json:"venue"`
+	DeadNationID    string    `json:"dead_nation_id"`
+	NumberOfTickets int       `json:"number_of_tickets"`
+	StartTime       time.Time `json:"start_time"`
+	Title           string    `json:"title"`
+	Venue           string    `json:"venue"`
 }
 
 func (h Handler) PostShows(c echo.Context) error {
@@ -28,7 +28,7 @@ func (h Handler) PostShows(c echo.Context) error {
 	show := entities.Show{
 		ShowID:          showID,
 		DeadNationID:    request.DeadNationID,
-		NumberOfTickets: request.NumberOfTicket,
+		NumberOfTickets: request.NumberOfTickets,
 		StartTime:       request.StartTime,
 		Title:           request.Title,
 		Venue:           request.Venue,
