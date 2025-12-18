@@ -14,6 +14,8 @@ github.com/Shopify/goreferrer v0.0.0-20250513162709-b78e2829e40b h1:3QuwXO2TnDss
 github.com/Shopify/goreferrer v0.0.0-20250513162709-b78e2829e40b/go.mod h1:NYezi6wtnJtBm5btoprXc5SvAdqH0XTXWnUup0MptAI=
 github.com/ThreeDotsLabs/go-event-driven/v2 v2.0.0 h1:EgXGsYlkg37YOS3MLbUNrYTk0YZ5Ho0JFoI+RVxeZTg=
 github.com/ThreeDotsLabs/go-event-driven/v2 v2.0.0/go.mod h1:uQkKZwSHJQoCAAnIQEL9ySN8412IJJ/ei8Cukn8/a7M=
+github.com/ThreeDotsLabs/go-event-driven/v2 v2.0.3 h1:d0gDcY1giK4gtZ7KfyCVRZ4ZMBl6hi7E+Lps0xs5+08=
+github.com/ThreeDotsLabs/go-event-driven/v2 v2.0.3/go.mod h1:i5iOa7S81rrvlrp3xE+G31MSP2NF4DwpMQr+4YCC+Xs=
 github.com/ThreeDotsLabs/watermill v1.4.6 h1:rWoXlxdBgUyg/bZ3OO0pON+nESVd9r6tnLTgkZ6CYrU=
 github.com/ThreeDotsLabs/watermill v1.4.6/go.mod h1:lBnrLbxOjeMRgcJbv+UiZr8Ylz8RkJ4m6i/VN/Nk+to=
 github.com/ajg/form v1.5.1 h1:t9c7v8JUKu/XxOGBU0yjNpaMloxGEJhUkqFRq0ibGeU=

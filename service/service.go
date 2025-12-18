@@ -17,6 +17,7 @@ import (
 	"tickets/db"
 	ticketsHttp "tickets/http"
 	"tickets/message"
+	"tickets/message/command"
 	"tickets/message/event"
 )
 
@@ -44,6 +45,7 @@ func New(
 		panic(err)
 	}
 	eventBus := event.NewBus(publisher)
+	commandBus := command.NewBus(publisher)
 	eventsHandler := event.NewHandler(
 		spreadsheetsAPI,
 		receiptsService,
@@ -54,7 +56,7 @@ func New(
 		deadNationClient,
 	)
 	eventProcessorConfig := event.NewProcessorConfig(redisClient, watermillLogger)
-	echoRouter := ticketsHttp.NewHttpRouter(eventBus, ticketsRepo, showsRepo, bookingRepo)
+	echoRouter := ticketsHttp.NewHttpRouter(eventBus, commandBus, ticketsRepo, showsRepo, bookingRepo)
 	watermillRouter := message.NewWatermillRouter(
 		eventProcessorConfig,
 		eventsHandler,
